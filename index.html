@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="th" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Meal Logger | Corporate Edition</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Prompt", "sans-serif"],
+            },
+            colors: {
+              corporate: {
+                900: "#1e1b4b", // Deep Indigo/Navy
+                800: "#312e81",
+              },
+              sage: {
+                500: "#719f91", // Soft Sage Green
+                600: "#5a8276",
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 10px;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background-color: #475569;
+      }
+
+      /* Smooth transitions */
+      * {
+        transition:
+          background-color 0.3s ease,
+          border-color 0.3s ease;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-stone-100 text-slate-800 dark:bg-slate-900 dark:text-stone-200 font-sans antialiased overflow-hidden h-screen flex"
+  >
+    <div
+      id="drawerOverlay"
+      class="fixed inset-0 bg-slate-900/50 dark:bg-black/60 z-40 hidden backdrop-blur-sm transition-opacity"
+      onclick="toggleDrawer()"
+    ></div>
+
+    <aside
+      id="formDrawer"
+      class="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-white dark:bg-corporate-900 shadow-2xl md:shadow-none border-r border-stone-200 dark:border-corporate-800 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col h-full"
+    >
+      <div
+        class="p-6 border-b border-stone-100 dark:border-corporate-800 flex justify-between items-center"
+      >
+        <div>
+          <h1
+            class="text-xl font-bold text-corporate-900 dark:text-white flex items-center gap-2"
+          >
+            <i class="ph-fill ph-bowl-food text-sage-600 text-2xl"></i>
+            Meal Logger
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Daily Intake Management
+          </p>
+        </div>
+        <button
+          onclick="toggleDrawer()"
+          class="md:hidden text-slate-400 hover:text-slate-600 dark:hover:text-white text-2xl"
+        >
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-3">
+            <h2
+              class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2"
+            >
+              <i class="ph-fill ph-star text-amber-500"></i> Quick Add
+            </h2>
+          </div>
+          <div id="favoritesContainer" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <form id="mealForm" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1"
+                >วันที่ (Date)</label
+              >
+              <input
+                type="date"
+                id="inputDate"
+                required
+                class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 dark:text-white"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1"
+                >เวลา (Time)</label
+              >
+              <input
+                type="time"
+                id="inputTime"
+                required
+                class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1"
+              >ประเภทมื้อ (Meal Type)</label
+            >
+            <select
+              id="inputType"
+              required
+              class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 dark:text-white"
+            >
+              <option value="" disabled selected>เลือกมื้ออาหาร...</option>
+              <option value="Breakfast">มื้อเช้า (Breakfast)</option>
+              <option value="Lunch">มื้อกลางวัน (Lunch)</option>
+              <option value="Dinner">มื้อเย็น (Dinner)</option>
+              <option value="Snack">ของว่าง (Snack)</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1"
+              >ชื่อเมนู (Menu Name)</label
+            >
+            <input
+              type="text"
+              id="inputMenu"
+              required
+              placeholder="เช่น ข้าวกะเพราไก่ไข่ดาว"
+              class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 dark:text-white placeholder-slate-400"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1"
+                >แคลอรี (Kcal)</label
+              >
+              <input
+                type="number"
+                id="inputCal"
+                placeholder="0"
+                class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 dark:text-white placeholder-slate-400"
+              />
+            </div>
+            <div>
+              <label
+                class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1"
+                >ราคา (THB)</label
+              >
+              <input
+                type="number"
+                id="inputPrice"
+                required
+                placeholder="0.00"
+                class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-500 dark:text-white placeholder-slate-400"
+              />
+            </div>
+          </div>
+
+          <div class="pt-4">
+            <button
+              type="submit"
+              class="w-full bg-sage-600 hover:bg-sage-500 text-white font-medium py-2.5 rounded-lg shadow-md shadow-sage-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+            >
+              <i class="ph-bold ph-floppy-disk"></i> บันทึกข้อมูล
+            </button>
+          </div>
+        </form>
+      </div>
+    </aside>
+
+    <main
+      class="flex-1 h-full flex flex-col min-w-0 bg-stone-100 dark:bg-slate-900"
+    >
+      <header
+        class="h-16 px-6 lg:px-10 bg-stone-100 dark:bg-slate-900 border-b border-stone-200 dark:border-slate-800 flex items-center justify-between sticky top-0 z-10"
+      >
+        <div class="flex items-center gap-4">
+          <button
+            onclick="toggleDrawer()"
+            class="md:hidden text-slate-600 dark:text-slate-300 hover:text-corporate-900 dark:hover:text-white text-2xl"
+          >
+            <i class="ph ph-list"></i>
+          </button>
+          <h2
+            class="text-lg font-semibold text-slate-800 dark:text-white hidden sm:block"
+          >
+            History & Insights
+          </h2>
+        </div>
+
+        <button
+          onclick="toggleDarkMode()"
+          class="p-2 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-stone-200 dark:border-slate-700 text-slate-600 dark:text-amber-400 hover:bg-stone-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          <i id="themeIcon" class="ph-fill ph-moon text-xl"></i>
+        </button>
+      </header>
+
+      <div class="flex-1 overflow-y-auto p-6 lg:p-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-stone-200 dark:border-slate-700 flex items-center gap-4"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center text-2xl"
+            >
+              <i class="ph-fill ph-fire"></i>
+            </div>
+            <div>
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                Total Calories Today
+              </p>
+              <div class="flex items-baseline gap-1">
+                <h3
+                  id="statCalories"
+                  class="text-2xl font-bold text-slate-800 dark:text-white"
+                >
+                  0
+                </h3>
+                <span class="text-xs text-slate-400">/ 2000 kcal</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-stone-200 dark:border-slate-700 flex items-center gap-4"
+          >
+            <div
+              class="w-12 h-12 rounded-full bg-sage-100 dark:bg-sage-900/30 text-sage-600 dark:text-sage-400 flex items-center justify-center text-2xl"
+            >
+              <i class="ph-fill ph-wallet"></i>
+            </div>
+            <div>
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                Total Expense Today
+              </p>
+              <div class="flex items-baseline gap-1">
+                <span
+                  class="text-lg font-semibold text-slate-800 dark:text-white"
+                  >฿</span
+                >
+                <h3
+                  id="statPrice"
+                  class="text-2xl font-bold text-slate-800 dark:text-white"
+                >
+                  0.00
+                </h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-stone-200 dark:border-slate-700 overflow-hidden"
+        >
+          <div
+            class="px-6 py-4 border-b border-stone-100 dark:border-slate-700 flex justify-between items-center bg-stone-50/50 dark:bg-slate-800/50"
+          >
+            <h3 class="font-semibold text-slate-800 dark:text-white">
+              Recent Meals
+            </h3>
+            <div class="text-sm text-slate-500">Today</div>
+          </div>
+
+          <div
+            id="historyList"
+            class="divide-y divide-stone-100 dark:divide-slate-700"
+          ></div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // --- 1. Configuration ---
+      const API_URL =
+        "https://script.google.com/macros/s/AKfycbx1PU4oSFinTaBDD2u0TfAo_6cusP09h78vrtXj4im5xufDyqJVsVN_7jDXtURxT9Sd/exec";
+      let favoritesData = [];
+      let historyData = [];
+
+      // --- 2. Utility Functions ---
+      function getToday() {
+        const d = new Date();
+        return d.toISOString().split("T")[0];
+      }
+
+      function getCurrentTime() {
+        const d = new Date();
+        return d.toTimeString().substring(0, 5);
+      }
+
+      function formatCurrency(amount) {
+        return parseFloat(amount || 0).toLocaleString("th-TH", {
+          minimumFractionDigits: 2,
+        });
+      }
+
+      function getMealIcon(type) {
+        switch (type) {
+          case "Breakfast":
+            return '<i class="ph-duotone ph-sunrise text-amber-500"></i>';
+          case "Lunch":
+            return '<i class="ph-duotone ph-sun text-orange-500"></i>';
+          case "Dinner":
+            return '<i class="ph-duotone ph-moon-stars text-corporate-800 dark:text-indigo-400"></i>';
+          case "Snack":
+            return '<i class="ph-duotone ph-coffee text-amber-700 dark:text-amber-300"></i>';
+          default:
+            return '<i class="ph-duotone ph-fork-knife text-slate-500"></i>';
+        }
+      }
+
+      // --- 3. UI Interactions ---
+      function toggleDrawer() {
+        const drawer = document.getElementById("formDrawer");
+        const overlay = document.getElementById("drawerOverlay");
+        drawer.classList.toggle("-translate-x-full");
+        overlay.classList.toggle("hidden");
+      }
+
+      function toggleDarkMode() {
+        const html = document.documentElement;
+        const icon = document.getElementById("themeIcon");
+        if (html.classList.contains("dark")) {
+          html.classList.remove("dark");
+          icon.classList.remove("ph-sun", "text-amber-400");
+          icon.classList.add("ph-moon", "text-slate-600");
+        } else {
+          html.classList.add("dark");
+          icon.classList.remove("ph-moon", "text-slate-600");
+          icon.classList.add("ph-sun", "text-amber-400");
+        }
+      }
+
+      function applyQuickAdd(menu, cal, price) {
+        document.getElementById("inputMenu").value = menu;
+        document.getElementById("inputCal").value = cal;
+        document.getElementById("inputPrice").value = price;
+
+        const btn = document.querySelector('button[type="submit"]');
+        btn.classList.add("ring-4", "ring-sage-500/50");
+        setTimeout(
+          () => btn.classList.remove("ring-4", "ring-sage-500/50"),
+          300,
+        );
+
+        if (window.innerWidth < 768) {
+          document
+            .getElementById("mealForm")
+            .scrollIntoView({ behavior: "smooth" });
+        }
+      }
+
+      // --- 4. Skeleton Loaders ---
+      function renderFavoritesSkeleton() {
+        const container = document.getElementById("favoritesContainer");
+        let skeletonHTML = "";
+        for (let i = 0; i < 3; i++) {
+          skeletonHTML += `<div class="animate-pulse bg-stone-200 dark:bg-slate-700 rounded-full h-10 w-24"></div>`;
+        }
+        container.innerHTML = skeletonHTML;
+      }
+
+      function renderHistorySkeleton() {
+        const list = document.getElementById("historyList");
+        let skeletonHTML = "";
+        for (let i = 0; i < 4; i++) {
+          skeletonHTML += `
+            <div class="p-4 sm:p-5 flex items-center justify-between">
+                <div class="flex items-center gap-4 w-full">
+                    <div class="w-10 h-10 rounded-full bg-stone-200 dark:bg-slate-700 animate-pulse flex-shrink-0"></div>
+                    <div class="w-full space-y-2">
+                        <div class="h-4 bg-stone-200 dark:bg-slate-700 rounded w-1/2 animate-pulse"></div>
+                        <div class="h-3 bg-stone-200 dark:bg-slate-700 rounded w-1/3 animate-pulse"></div>
+                    </div>
+                </div>
+            </div>`;
+        }
+        list.innerHTML = skeletonHTML;
+      }
+
+      // --- 5. Fetch API Data ---
+      async function fetchAppData() {
+        renderFavoritesSkeleton();
+        renderHistorySkeleton();
+
+        try {
+          const [favRes, histRes] = await Promise.all([
+            fetch(`${API_URL}?sheet=favorites`),
+            fetch(`${API_URL}?sheet=main`),
+          ]);
+
+          const favJson = await favRes.json();
+          const histJson = await histRes.json();
+
+          if (favJson.status === "success") {
+            favoritesData = favJson.data;
+            renderFavorites();
+          }
+
+          if (histJson.status === "success") {
+            historyData = histJson.data;
+            renderHistory();
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          document.getElementById("historyList").innerHTML =
+            `<div class="p-8 text-center text-red-500">❌ เกิดข้อผิดพลาดในการดึงข้อมูล โปรดตรวจสอบ API URL หรือลองรีเฟรชหน้าเว็บ</div>`;
+        }
+      }
+
+      // --- 6. Render Logic ---
+      function renderFavorites() {
+        const container = document.getElementById("favoritesContainer");
+        if (favoritesData.length === 0) {
+          container.innerHTML = `<span class="text-xs text-slate-400">ยังไม่มีเมนูโปรด</span>`;
+          return;
+        }
+        container.innerHTML = favoritesData
+          .map(
+            (fav) => `
+            <button type="button" onclick="applyQuickAdd('${fav.MenuName}', ${fav.Calories}, ${fav.Price})" 
+                class="group bg-stone-100 hover:bg-sage-50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-stone-200 dark:border-slate-600 rounded-full px-4 py-2 text-sm text-slate-600 dark:text-slate-300 transition-all flex flex-col items-start shadow-sm hover:shadow text-left">
+                <span class="font-medium group-hover:text-sage-600 dark:group-hover:text-sage-400">${fav.MenuName}</span>
+                <span class="text-[10px] text-slate-400">${fav.Calories || 0} kcal | ฿${fav.Price || 0}</span>
+            </button>
+        `,
+          )
+          .join("");
+      }
+
+      function renderHistory() {
+        const list = document.getElementById("historyList");
+        let totalCal = 0;
+        let totalPrice = 0;
+
+        const todayDate = getToday();
+        const todayHistory = historyData.filter(
+          (item) => item.Date === todayDate,
+        );
+
+        if (todayHistory.length === 0) {
+          list.innerHTML = `<div class="p-8 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center"><i class="ph-duotone ph-empty text-4xl mb-2"></i> No meals recorded today.</div>`;
+        } else {
+          const sortedHistory = todayHistory.sort((a, b) =>
+            b.Time.localeCompare(a.Time),
+          );
+          list.innerHTML = sortedHistory
+            .map((item) => {
+              totalCal += Number(item.Calories) || 0;
+              totalPrice += Number(item.Price) || 0;
+              return `
+              <div class="p-4 sm:p-5 hover:bg-stone-50 dark:hover:bg-slate-800/80 transition-colors flex items-center justify-between group">
+                  <div class="flex items-center gap-4">
+                      <div class="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 flex items-center justify-center text-xl shadow-inner border border-stone-200 dark:border-slate-600">
+                          ${getMealIcon(item.MealType)}
+                      </div>
+                      <div>
+                          <h4 class="text-sm font-semibold text-slate-800 dark:text-stone-200">${item.MenuName}</h4>
+                          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <span class="flex items-center gap-1"><i class="ph ph-clock"></i> ${item.Time}</span>
+                              <span>&bull;</span>
+                              <span>${item.MealType}</span>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="text-right">
+                      <div class="text-sm font-bold text-corporate-900 dark:text-white">฿${formatCurrency(item.Price)}</div>
+                      <div class="text-xs text-sage-600 dark:text-sage-400 mt-1">${item.Calories || 0} kcal</div>
+                  </div>
+              </div>`;
+            })
+            .join("");
+        }
+
+        document.getElementById("statCalories").innerText = totalCal;
+        document.getElementById("statPrice").innerText =
+          formatCurrency(totalPrice);
+      }
+
+      // --- 7. Initialization & Events ---
+      document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("inputDate").value = getToday();
+        document.getElementById("inputTime").value = getCurrentTime();
+
+        if (
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches
+        ) {
+          toggleDarkMode();
+        }
+
+        // Fetch Data on Load
+        fetchAppData();
+      });
+
+      // Submit form
+      document
+        .getElementById("mealForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const submitBtn = document.querySelector('button[type="submit"]');
+          const originalBtnHTML = submitBtn.innerHTML;
+
+          submitBtn.innerHTML =
+            '<i class="ph-bold ph-spinner animate-spin"></i> กำลังบันทึก...';
+          submitBtn.disabled = true;
+          submitBtn.classList.add("opacity-70", "cursor-not-allowed");
+
+          const payload = {
+            action: "add_log",
+            ID: Date.now().toString(),
+            Date: document.getElementById("inputDate").value,
+            Time: document.getElementById("inputTime").value,
+            MealType: document.getElementById("inputType").value,
+            MenuName: document.getElementById("inputMenu").value,
+            Calories: document.getElementById("inputCal").value || 0,
+            Price: document.getElementById("inputPrice").value,
+          };
+
+          try {
+            const res = await fetch(API_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(payload),
+            });
+
+            const result = await res.json();
+
+            if (result.status === "success") {
+              document.getElementById("inputMenu").value = "";
+              document.getElementById("inputCal").value = "";
+              document.getElementById("inputPrice").value = "";
+              document.getElementById("inputType").value = "";
+
+              if (window.innerWidth < 768) toggleDrawer();
+              await fetchAppData(); // Refresh
+            } else {
+              alert("บันทึกไม่สำเร็จ: " + result.message);
+            }
+          } catch (error) {
+            console.error("Error posting data:", error);
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+          } finally {
+            submitBtn.innerHTML = originalBtnHTML;
+            submitBtn.disabled = false;
+            submitBtn.classList.remove("opacity-70", "cursor-not-allowed");
+          }
+        });
+    </script>
+  </body>
+</html>
